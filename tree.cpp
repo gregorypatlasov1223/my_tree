@@ -6,6 +6,19 @@
 #include "tree.h"
 #include "tree_error_type.h"
 
+const char* tree_error_translator(tree_error_type error)
+{
+    switch(error)
+    {
+        case TREE_NO_ERROR:              return "There is no error";
+        case TREE_ERROR_ALLOCATION:      return "Incorrect memory allocation";
+        case TREE_ERROR_NULL_PTR:        return "A null pointer is used";
+        case TREE_ERROR_CONSTRUCTOR:     return "Error in the constructor";
+        case TREE_ERROR_OPENING_FILE:    return "Error when opening a file";
+        default:                         return "Unknown error";
+    }
+}
+
 tree_error_type tree_destroy_recursive(node_t* node)
 {
     if (node == NULL)
@@ -185,7 +198,7 @@ int is_root_node(tree_t* tree, node_t* node)
 }
 
 
-tree_error_type create_dot_tree_recursive(tree_t* tree, node_t* node, FILE* dot_file)
+tree_error_type create_dot_tree_recursive(tree_t* tree, node_t* node, FILE* dot_file, int level)
 {
     if (node == NULL)
         return TREE_ERROR_NULL_PTR;
@@ -193,21 +206,38 @@ tree_error_type create_dot_tree_recursive(tree_t* tree, node_t* node, FILE* dot_
     const char* fill_color = is_root_node(tree, node) ? "lightblue" : "white";
     const char* shape = "Mrecord";
 
-    fprintf(dot_file, "    node_%p [label=\"{<f0> data: %d | <f1> left | <f2> right}\", shape=%s, style=filled, fillcolor=%s, color=black];\n",
-            (void*)node, node->data, shape, fill_color); // <f0> данные узла, <f1> указатель на left, <f2> = указатель на right
+    char left_address[MAX_LENGTH_OF_ADDRESS] = {};
+    char right_address[MAX_LENGTH_OF_ADDRESS] = {};
+
+    if (node -> left == NULL)
+        snprintf(left_address, sizeof(left_address), "NULL");
+    else
+        snprintf(left_address, sizeof(left_address), "%p", (void*)node -> left);
+
+    if (node -> right == NULL)
+        snprintf(right_address, sizeof(right_address), "NULL");
+    else
+        snprintf(right_address, sizeof(right_address), "%p", (void*)node -> right);
+
+    fprintf(dot_file, "    node_%p [label=\"{%p | {data: %d} | {<f0> %s | <f1> %s}}\", shape=%s, style=filled, fillcolor=%s, color=black];\n",
+           (void*)node, (void*)node, node -> data, left_address, right_address, shape, fill_color);
+
+    double distance = BASE_EDGE_LENGTH + (level * DEPTH_SPREAD_FACTOR); // distance - min расстояние между узлом и листом
 
     if (node -> left != NULL)
     {
-        fprintf(dot_file, "    node_%p:<f1> -> node_%p:<f0> [color=blue];\n",
-                                (void*)node, (void*)node -> left);
-        create_dot_tree_recursive(tree, node -> left, dot_file);
+        fprintf(dot_file, "    node_%p:<f0> -> node_%p [color=blue, minlen=%.1f];\n",
+                (void*)node, (void*)node -> left, distance); // <f0> <f1> - куда подсоединяются стрелки
+
+        create_dot_tree_recursive(tree, node -> left, dot_file, level + 1);
     }
 
     if (node -> right != NULL)
     {
-        fprintf(dot_file, "    node_%p:<f2> -> node_%p:<f0> [color=red];\n",
-                               (void*)node, (void*)node -> right);
-        create_dot_tree_recursive(tree, node -> right, dot_file);
+        fprintf(dot_file, "    node_%p:<f1> -> node_%p [color=red, minlen=%.1f];\n",
+                (void*)node, (void*)node -> right, distance);
+
+        create_dot_tree_recursive(tree, node -> right, dot_file, level + 1);
     }
 
     return TREE_NO_ERROR;
@@ -227,11 +257,13 @@ tree_error_type create_dot_file_tree(tree_t* tree, const char* filename)
     fprintf(dot_file, "digraph BinaryTree {\n");
     fprintf(dot_file, "    rankdir=TB;\n");
     fprintf(dot_file, "    node [shape=Mrecord, color=black];\n\n");
+    fprintf(dot_file, "    graph [nodesep=0.5, ranksep=1.0];\n"); // nodesep расстояние между узлами на одном уровне
+    fprintf(dot_file, "    edge [arrowsize=0.8];\n\n");
 
     if (tree -> root == NULL)
         fprintf(dot_file, "    empty [label=\"Empty tree\"];\n");
     else
-        create_dot_tree_recursive(tree, tree->root, dot_file);
+        create_dot_tree_recursive(tree, tree->root, dot_file, ZERO_RANK);
 
     fprintf(dot_file, "}\n");
     fclose(dot_file);

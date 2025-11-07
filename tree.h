@@ -3,7 +3,13 @@
 
 #include "tree_error_type.h"
 
+#define ZERO_RANK 0
 #define COEFFICIENT 2
+#define BASE_EDGE_LENGTH    1.0    // базовая длина связей
+#define DEPTH_SPREAD_FACTOR 0.3    // коэффициент "расползания" на уровень глубины
+#define MIN_EDGE_LENGTH     0.5    // min длина связи
+#define MAX_EDGE_LENGTH     3.0
+#define MAX_LENGTH_OF_ADDRESS 128
 #define MAX_LENGTH_OF_FILENAME 256
 #define MAX_LENGTH_OF_SYSTEM_COMMAND 1024
 
@@ -22,6 +28,7 @@ struct tree_t
     node_t* root;
 };
 // 1. Все что связано с деревом
+const char* tree_error_translator(tree_error_type error);
 tree_error_type print_tree_node(const node_t* node);
 tree_error_type tree_insert_element(tree_t* tree, int value);
 tree_error_type tree_insert_element_recursive(node_t** node_ptr, tree_element value);
@@ -35,7 +42,7 @@ void write_information_about_tree(FILE* htm_file, tree_t* tree);
 tree_error_type write_tree_nodes_table_recursive(node_t* node, FILE* htm_file);
 void write_tree_nodes_table(FILE* htm_file, tree_t* tree);
 int is_root_node(tree_t* tree, node_t* node);
-tree_error_type create_dot_tree_recursive(tree_t* tree, node_t* node, FILE* dot_file);
+tree_error_type create_dot_tree_recursive(tree_t* tree, node_t* node, FILE* dot_file, int level);
 tree_error_type create_dot_file_tree(tree_t* tree, const char* filename);
 tree_error_type create_graph_visualization_tree(tree_t* tree, FILE* htm_file, const char* folder_name, time_t now);
 tree_error_type tree_dump_to_htm(tree_t* tree, FILE* htm_file, const char* folder_name);
