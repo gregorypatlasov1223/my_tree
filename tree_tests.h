@@ -1,0 +1,10 @@
+#ifndef TREE_TESTS_H_
+#define TREE_TESTS_H_
+
+#include "tree.h"
+#include "tree_tests.h"
+
+void test_large_tree();
+void all_tests();
+
+#endif //TREE_TESTS_H_
