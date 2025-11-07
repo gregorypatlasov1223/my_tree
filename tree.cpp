@@ -15,9 +15,34 @@ const char* tree_error_translator(tree_error_type error)
         case TREE_ERROR_NULL_PTR:        return "A null pointer is used";
         case TREE_ERROR_CONSTRUCTOR:     return "Error in the constructor";
         case TREE_ERROR_OPENING_FILE:    return "Error when opening a file";
+        case TREE_ERROR_SIZE_MISMATCH:   return "Tree size doesn't match actual node count";
         default:                         return "Unknown error";
     }
 }
+
+
+size_t count_nodes_recursive(node_t* node)
+{
+    if (node == NULL)
+        return 0;
+
+    return count_nodes_recursive(node -> left) + count_nodes_recursive(node -> right) + 1;
+}
+
+
+tree_error_type tree_verify(tree_t* tree)
+{
+    if (tree == NULL)
+        return TREE_ERROR_NULL_PTR;
+
+    size_t actual_size = count_nodes_recursive(tree -> root);
+
+    if (actual_size != tree -> size)
+        return TREE_ERROR_SIZE_MISMATCH;
+
+    return TREE_NO_ERROR;
+}
+
 
 tree_error_type tree_destroy_recursive(node_t* node)
 {
@@ -124,8 +149,11 @@ tree_error_type tree_common_dump(tree_t* tree)
 
     printf("=====TREE DUMP=====\n");
     printf("Tree size = %zu\n", tree -> size);
-    printf("Tree structure\n");
 
+    tree_error_type verify_result = tree_verify(tree);
+    printf("Tree verification: %s\n", tree_error_translator(verify_result));
+
+    printf("Tree structure\n");
     if (tree -> root == NULL)
         printf("EMPTY TREE\n");
 
@@ -133,7 +161,7 @@ tree_error_type tree_common_dump(tree_t* tree)
 
     putchar('\n');
 
-    return TREE_NO_ERROR;
+    return verify_result;
 }
 
 // ============================GRAPHIC_DUMP===========================================
@@ -400,6 +428,9 @@ tree_error_type close_tree_log(const char* filename)
 
     return TREE_NO_ERROR;
 }
+
+
+
 
 
 

@@ -30,6 +30,8 @@ struct tree_t
 // 1. Все что связано с деревом
 const char* tree_error_translator(tree_error_type error);
 tree_error_type print_tree_node(const node_t* node);
+size_t count_nodes_recursive(node_t* node);
+tree_error_type tree_verify(tree_t* tree);
 tree_error_type tree_insert_element(tree_t* tree, int value);
 tree_error_type tree_insert_element_recursive(node_t** node_ptr, tree_element value);
 tree_error_type tree_destroy_recursive(node_t* node);
